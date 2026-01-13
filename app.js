@@ -1,6 +1,5 @@
 /**
  * Bibliotheca Dashboard - Complete JavaScript
- * Author: BlackboxAI
  * Features: SPA, CRUD Books & Authors, Dashboard, Charts, API, LocalStorage
  */
 
@@ -11,7 +10,6 @@
 // Initialize data from LocalStorage or default values
 let books = JSON.parse(localStorage.getItem('books')) || [];
 let authors = JSON.parse(localStorage.getItem('authors')) || [];
-let apiBooksCount = parseInt(localStorage.getItem('apiBooksCount')) || 0;
 
 // Chart instance
 let genreChart = null;
@@ -19,14 +17,13 @@ let genreChart = null;
 // Edit mode tracking
 let editingBookIndex = -1;
 
+// API Books limit - exactly 5 books
+const API_BOOKS_LIMIT = 5;
+
 // ============================================
 // NAVIGATION (SPA)
 // ============================================
 
-/**
- * Show specific section and hide others
- * @param {string} sectionId - ID of the section to show
- */
 function showSection(sectionId) {
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
@@ -70,9 +67,6 @@ function showSection(sectionId) {
 // BOOKS CRUD OPERATIONS
 // ============================================
 
-/**
- * Add or Update a book
- */
 document.getElementById('bookForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -117,10 +111,6 @@ document.getElementById('bookForm').addEventListener('submit', function(e) {
     updateGenreChart();
 });
 
-/**
- * Display books with optional filtering
- * @param {Array} filteredBooks - Optional array to display instead of all books
- */
 function displayBooks(filteredBooks = null) {
     const list = document.getElementById('bookList');
     const booksToDisplay = filteredBooks || books;
@@ -166,10 +156,6 @@ function displayBooks(filteredBooks = null) {
     }).join('');
 }
 
-/**
- * Edit a book - populate form with book data
- * @param {number} index - Index of the book to edit
- */
 function editBook(index) {
     const book = books[index];
     
@@ -192,20 +178,8 @@ function editBook(index) {
     showToast('Mode modification activé', 'warning');
 }
 
-/**
- * Delete a book with confirmation
- * @param {number} index - Index of the book to delete
- */
 function deleteBook(index) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce livre ?')) {
-        const book = books[index];
-        
-        // Decrement API count if it was an API book
-        if (book.fromAPI) {
-            apiBooksCount--;
-            localStorage.setItem('apiBooksCount', apiBooksCount);
-        }
-        
         books.splice(index, 1);
         saveBooks();
         
@@ -218,9 +192,6 @@ function deleteBook(index) {
     }
 }
 
-/**
- * Reset book form to initial state
- */
 function resetBookForm() {
     document.getElementById('bookForm').reset();
     editingBookIndex = -1;
@@ -232,16 +203,10 @@ function resetBookForm() {
     }
 }
 
-/**
- * Save books to LocalStorage
- */
 function saveBooks() {
     localStorage.setItem('books', JSON.stringify(books));
 }
 
-/**
- * Update books count display
- */
 function updateBooksCount() {
     document.getElementById('booksCount').textContent = books.length;
 }
@@ -250,9 +215,6 @@ function updateBooksCount() {
 // BOOKS SEARCH & SORT
 // ============================================
 
-/**
- * Search books by title or author
- */
 document.getElementById('searchBook').addEventListener('input', function() {
     const keyword = this.value.trim().toLowerCase();
     
@@ -269,9 +231,6 @@ document.getElementById('searchBook').addEventListener('input', function() {
     displayBooks(filtered);
 });
 
-/**
- * Sort books alphabetically by title
- */
 function sortBooks() {
     books.sort((a, b) => a.title.localeCompare(b.title));
     saveBooks();
@@ -283,10 +242,6 @@ function sortBooks() {
 // BOOK DETAILS MODAL
 // ============================================
 
-/**
- * Show detailed view of a book
- * @param {number} index - Index of the book
- */
 function showBookDetails(index) {
     const book = books[index];
     const modal = document.getElementById('bookModal');
@@ -322,23 +277,18 @@ function showBookDetails(index) {
     document.body.style.overflow = 'hidden';
 }
 
-/**
- * Close the book details modal
- */
 function closeModal() {
     const modal = document.getElementById('bookModal');
     modal.classList.remove('show');
     document.body.style.overflow = '';
 }
 
-// Close modal when clicking outside
 document.getElementById('bookModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
     }
 });
 
-// Close modal with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
@@ -349,9 +299,6 @@ document.addEventListener('keydown', function(e) {
 // AUTHORS CRUD OPERATIONS
 // ============================================
 
-/**
- * Add a new author
- */
 document.getElementById('authorForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -379,9 +326,6 @@ document.getElementById('authorForm').addEventListener('submit', function(e) {
     showToast('Auteur ajouté avec succès!', 'success');
 });
 
-/**
- * Display all authors
- */
 function displayAuthors() {
     const list = document.getElementById('authorList');
     
@@ -408,10 +352,6 @@ function displayAuthors() {
     `).join('');
 }
 
-/**
- * Delete an author with confirmation
- * @param {number} index - Index of the author to delete
- */
 function deleteAuthor(index) {
     if (confirm(`Êtes-vous sûr de vouloir supprimer l'auteur "${authors[index]}" ?`)) {
         authors.splice(index, 1);
@@ -425,16 +365,10 @@ function deleteAuthor(index) {
     }
 }
 
-/**
- * Save authors to LocalStorage
- */
 function saveAuthors() {
     localStorage.setItem('authors', JSON.stringify(authors));
 }
 
-/**
- * Update authors count display
- */
 function updateAuthorsCount() {
     document.getElementById('authorsCount').textContent = authors.length;
 }
@@ -443,24 +377,22 @@ function updateAuthorsCount() {
 // DASHBOARD
 // ============================================
 
-/**
- * Update all dashboard KPIs
- */
 function updateDashboard() {
+    // Count books
     document.getElementById('kpiBooks').textContent = books.length;
+    
+    // Count authors
     document.getElementById('kpiAuthors').textContent = authors.length;
-    // Count API books dynamically from the books array
-    const apiBooksCount = books.filter(book => book.fromAPI).length;
-    document.getElementById('kpiApi').textContent = apiBooksCount;
+    
+    // Count API books - strictly from books array
+    const apiBooks = books.filter(book => book.fromAPI);
+    document.getElementById('kpiApi').textContent = apiBooks.length;
 }
 
 // ============================================
 // CHARTS - Chart.js
 // ============================================
 
-/**
- * Update the genre distribution chart
- */
 function updateGenreChart() {
     const ctx = document.getElementById('genreChart');
     if (!ctx) return;
@@ -554,21 +486,19 @@ function updateGenreChart() {
 // OPENLIBRARY API INTEGRATION
 // ============================================
 
-/**
- * Fetch books from OpenLibrary API
- * Gets 5 books and adds them to the collection
- */
 function fetchBooksFromAPI() {
-    // Check if we've already fetched API books (avoid duplicates on page reload)
+    // Count existing API books
     const existingApiBooks = books.filter(book => book.fromAPI);
-    if (existingApiBooks.length >= 5) {
-        console.log('API books already loaded, skipping fetch');
+    
+    // Only fetch if we have less than 5 API books
+    if (existingApiBooks.length >= API_BOOKS_LIMIT) {
+        console.log('Already have ' + API_BOOKS_LIMIT + ' API books, skipping fetch');
         return;
     }
     
     showToast('Récupération des livres depuis OpenLibrary...', 'info');
     
-    // Using OpenLibrary search API with a query for classic literature
+    // Fetch from OpenLibrary
     fetch('https://openlibrary.org/search.json?q=literature&limit=10&fields=title,author_name,first_publish_year,subject')
         .then(response => {
             if (!response.ok) {
@@ -587,33 +517,32 @@ function fetchBooksFromAPI() {
                 .filter(book => book.fromAPI)
                 .map(book => book.title.toLowerCase());
             
-            // Process books - only add new ones
+            // Add new API books until we reach 5 total
             let addedCount = 0;
-            const newBooks = [];
             
             for (const doc of data.docs) {
-                if (newBooks.length >= 5) break; // Limit to 5 books
+                // Stop if we already have 5 API books
+                if (books.filter(b => b.fromAPI).length >= API_BOOKS_LIMIT) {
+                    break;
+                }
                 
                 const title = doc.title || 'Titre inconnu';
                 
-                // Skip if this title already exists in our API books
+                // Skip if this title already exists
                 if (existingApiTitles.includes(title.toLowerCase())) {
                     continue;
                 }
                 
-                newBooks.push({
+                // Add the book
+                books.push({
                     title: title,
                     author: doc.author_name ? doc.author_name[0] : 'Auteur inconnu',
                     year: doc.first_publish_year ? doc.first_publish_year.toString() : 'N/A',
                     genre: doc.subject && doc.subject.length > 0 ? doc.subject[0] : 'Non catégorisé',
                     fromAPI: true
                 });
-            }
-            
-            // Add new books to collection
-            if (newBooks.length > 0) {
-                books.push(...newBooks);
-                addedCount = newBooks.length;
+                
+                addedCount++;
             }
             
             // Save to LocalStorage
@@ -625,11 +554,8 @@ function fetchBooksFromAPI() {
             updateDashboard();
             updateGenreChart();
             
-            if (addedCount > 0) {
-                showToast(`${addedCount} livre(s) ajouté(s) depuis OpenLibrary!`, 'success');
-            } else {
-                showToast('5 livres API déjà chargés', 'info');
-            }
+            const apiCount = books.filter(b => b.fromAPI).length;
+            showToast(`${apiCount} livres API chargés!`, 'success');
         })
         .catch(error => {
             console.error('API Error:', error);
@@ -641,22 +567,12 @@ function fetchBooksFromAPI() {
 // UTILITY FUNCTIONS
 // ============================================
 
-/**
- * Escape HTML to prevent XSS attacks
- * @param {string} text - Text to escape
- * @returns {string} - Escaped text
- */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-/**
- * Show a toast notification
- * @param {string} message - Message to display
- * @param {string} type - Type of notification (success, error, warning, info)
- */
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     
@@ -670,21 +586,47 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-/**
- * Mobile sidebar functions
- */
 function closeMobileSidebar() {
     document.querySelector('.sidebar').classList.remove('open');
-    document.querySelector('.sidebar-overlay').classList.remove('show');
+    document.querySelector('.sidebar-overlay')?.classList.remove('show');
+}
+
+// ============================================
+// CLEAR DATA
+// ============================================
+
+function clearAllData() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer toutes les données ? Cette action est irréversible.')) {
+        // Clear LocalStorage
+        localStorage.removeItem('books');
+        localStorage.removeItem('authors');
+        
+        // Reset arrays
+        books = [];
+        authors = [];
+        
+        // Update UI
+        displayBooks();
+        displayAuthors();
+        updateBooksCount();
+        updateAuthorsCount();
+        updateDashboard();
+        updateGenreChart();
+        resetBookForm();
+        
+        showToast('Toutes les données ont été supprimées!', 'success');
+        
+        // Re-fetch API books after clearing
+        setTimeout(() => {
+            fetchBooksFromAPI();
+        }, 500);
+    }
 }
 
 // ============================================
 // INITIALIZATION
 // ============================================
 
-/**
- * Initialize the application
- */
 function init() {
     // Display initial data
     displayBooks();
@@ -700,38 +642,6 @@ function init() {
     fetchBooksFromAPI();
     
     console.log('Bibliotheca Dashboard initialized successfully!');
-}
-
-// ============================================
-// CLEAR DATA
-// ============================================
-
-/**
- * Clear all LocalStorage data and reset application
- */
-function clearAllData() {
-    if (confirm('Êtes-vous sûr de vouloir supprimer toutes les données ? Cette action est irréversible.')) {
-        // Clear LocalStorage
-        localStorage.removeItem('books');
-        localStorage.removeItem('authors');
-        localStorage.removeItem('apiBooksCount');
-        
-        // Reset arrays
-        books = [];
-        authors = [];
-        apiBooksCount = 0;
-        
-        // Update UI
-        displayBooks();
-        displayAuthors();
-        updateBooksCount();
-        updateAuthorsCount();
-        updateDashboard();
-        updateGenreChart();
-        resetBookForm();
-        
-        showToast('Toutes les données ont été supprimées!', 'success');
-    }
 }
 
 // Run initialization when DOM is ready
